@@ -24,6 +24,6 @@ cache_line_t** initCache(int S , int E);
 unsigned long static inline getTag(unsigned long memoryAddress, int b, int s);
 int static inline getSet(unsigned long memoryAddress, int b , int s);
 int updateCache(unsigned long tag, unsigned long set, cache_line_t ** cache, int noOfLines, unsigned long * globalTimer);
-
+void freeCache(cache_line_t *** cachep, int s);
 
 #endif

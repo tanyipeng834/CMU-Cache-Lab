@@ -72,6 +72,8 @@ int main(int argc, char**argv)
     processFile(t,cache,v,e,b,s,&timer);
  
 
+    freeCache(&cache,s);
+
 
 
 
@@ -141,7 +143,6 @@ void processFile(char* traceFilePath , cache_line_t** cache, int verbose, int li
                 hit+=1;
                 break;
             case 2 :
-
                 strP += sprintf(strP,"miss eviction");
                 miss+=1;
                 evictions+=1;
@@ -278,6 +279,32 @@ int updateCache(unsigned long tag, unsigned long set, cache_line_t ** cache, int
 
             
     }
+
+
+void freeCache(cache_line_t *** cachep, int s){
+
+    if(!cachep || ! *cachep)return;
+    cache_line_t ** cache = *cachep;
+
+    int sets = 1<<s;
+
+    for (i =0;i<sets;i++)
+    {
+        free(cache[i]);
+        cache[i] =NULL;
+        
+
+        
+
+    }
+    free(cache);
+    *cachep =NULL;
+
+
+
+
+
+}
 
 
 

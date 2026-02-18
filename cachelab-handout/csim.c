@@ -11,10 +11,13 @@ int main(int argc, char**argv)
 {
     // options for my 
     int e,s,b,opt;
+    int v =0;
     // this is the trace file input
     char * t;
+    static unsigned long timer;
     cache_line_t **cache ;
     opterr=0;
+    
     
     while(-1!=(opt=getopt(argc,argv,"hvs:E:b:t:")))
     {
@@ -39,7 +42,7 @@ int main(int argc, char**argv)
                 printHelp(argv[0]);
                
             case 'v':
-                printf("fix this later");
+                v =1;
                 break;
             case '?' :
                 printf("%s: invalid option -- '%c'\n",argv[0],optopt);
@@ -66,7 +69,7 @@ int main(int argc, char**argv)
     
     // pass in the number of lines in a set and number of sets.
     cache = initCache(e,s);
-    processFile(t,cache,e,b,s);
+    processFile(t,cache,v,e,b,s,&timer);
  
 
 
@@ -75,7 +78,7 @@ int main(int argc, char**argv)
     
 
 
-    printSummary(0, 0, 0);
+    
     return 0;
 }
 
@@ -97,10 +100,13 @@ void printHelp(char * prog){
 
 }
 
-void processFile(char* traceFilePath , cache_line_t** cache, int lines, int byteBits, int setBits){
+void processFile(char* traceFilePath , cache_line_t** cache, int verbose, int lines, int byteBits, int setBits, unsigned long * globalTimer){
     char op;
     unsigned long memoryAddress;
     size_t size;
+    int miss =0 , hit=0,evictions=0;
+
+
 
     FILE * traceFile = fopen(traceFilePath,"r");
     if (!traceFile){
@@ -122,18 +128,23 @@ void processFile(char* traceFilePath , cache_line_t** cache, int lines, int byte
        char* strP = cacheBehaviorStr;
 
        
-       int cacheBehavior = updateCache(tag,set,cache,lines);
+       int cacheBehavior = updateCache(tag,set,cache,lines,globalTimer);
 
       switch (cacheBehavior){
 
             case 0 :
                 strP +=sprintf(strP,"miss");
+                miss +=1;
                 break;
             case 1 :
                 strP += sprintf(strP,"hit");
+                hit+=1;
                 break;
             case 2 :
+
                 strP += sprintf(strP,"miss eviction");
+                miss+=1;
+                evictions+=1;
                 break;
         
 
@@ -141,11 +152,17 @@ void processFile(char* traceFilePath , cache_line_t** cache, int lines, int byte
 
       if (op=='M'){
         strP+=sprintf(strP," hit");
+        hit+=1;
       }
 
       // print to stdout
 
+      if(verbose){
+
       printf("%c %lx %zu %s\n",op,memoryAddress,size,cacheBehaviorStr);
+      }
+
+      
 
     
 
@@ -159,6 +176,8 @@ void processFile(char* traceFilePath , cache_line_t** cache, int lines, int byte
 
 
     }
+
+    printSummary(hit, miss, evictions);
 
     fclose(traceFile);
 
@@ -202,14 +221,18 @@ int static inline getSet(unsigned long memoryAddress, int b , int s){
 }
 
 // 4 possiblities miss , hit miss + eviction represented by number 0 , a and 2
-int updateCache(unsigned long tag, unsigned long set, cache_line_t ** cache, int noOfLines){
+int updateCache(unsigned long tag, unsigned long set, cache_line_t ** cache, int noOfLines, unsigned long * globalTimer){
 
         int invalidSetIndex =-1;
         cache_line_t * cacheSet = cache[set];
         for (int i =0; i<noOfLines;i++){
-            cache_line_t currentLine = cacheSet[i];
-            if(currentLine.tag == tag && currentLine.valid ==1) return 1;
-            if (currentLine.valid==0 && invalidSetIndex ==-1) invalidSetIndex =i;
+            cache_line_t * currentLine = &cacheSet[i];
+            if(currentLine->tag == tag && currentLine->valid ==1){
+                currentLine -> time_counter = ++(*globalTimer);
+                return 1;
+
+            }
+            if (currentLine->valid==0 && invalidSetIndex ==-1) invalidSetIndex =i;
            
         }
 
@@ -218,6 +241,8 @@ int updateCache(unsigned long tag, unsigned long set, cache_line_t ** cache, int
         if(invalidSetIndex!=-1){
             cache_line_t *invalidLine = &cacheSet[invalidSetIndex];
             invalidLine->tag = tag;
+            invalidLine -> time_counter = ++(*globalTimer);
+
             invalidLine->valid =1;
             return 0;
 
@@ -226,8 +251,24 @@ int updateCache(unsigned long tag, unsigned long set, cache_line_t ** cache, int
        
 
         // find the set with the LRU cache and evict it
+        unsigned long leastRecentTime = cacheSet[0].time_counter;
+        int evictSetIndex=0;
+        for (int i =1;i<noOfLines;i++){
 
+            if (cacheSet[i].time_counter<leastRecentTime){
+                evictSetIndex= i;
+                leastRecentTime = cacheSet[i].time_counter;
+            }
+
+
+        }
+        cache_line_t * evictLine  = &cacheSet[evictSetIndex];
+        evictLine->tag = tag;
+        evictLine->time_counter = ++(*globalTimer);
+        evictLine->valid =1;
         return 2;
+
+
 
 
 

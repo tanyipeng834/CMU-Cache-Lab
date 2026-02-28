@@ -12,6 +12,7 @@
 
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 
+void transpose_32(int A[32][32],int B[32][32]);
 /* 
  * transpose_submit - This is the solution transpose function that you
  *     will be graded on for Part B of the assignment. Do not change
@@ -20,9 +21,60 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     be graded. 
  */
 char transpose_submit_desc[] = "Transpose submission";
-void transpose_submit(int M, int N, int A[N][M], int B[M][N])
-{
+
+
+void transpose_submit (int M, int N, int A[N][M] , int B[M][N]){
+
+
+	if(N==32 && M==32)transpose_32( A,B);
+
+
+
 }
+
+void transpose_32( int A[32][32], int B[32][32])
+{
+
+    // given that the cache size is 32 bytes we want to reduce the amount of conflict misses
+    // by bringing in less distinct cache sets into the cache
+    int i,j,i1,j1,tmp,diag;
+
+    for (i = 0; i < 32; i += 8) {
+        for (j = 0; j < 32; j += 8) {
+            for (i1 = i; i1 < i + 8; i1++) {
+                for ( j1 = j; j1 < j + 8; j1++) {
+
+			
+               
+ 			if( i1!=j1){
+
+
+				
+				
+			B[j1][i1] = A[i1][j1];
+
+
+			}
+			else{
+
+
+				tmp = A[i1][j1];
+				diag = i1;
+
+
+
+		}
+            
+		}
+		if(i==j)B[diag][diag] = tmp;
+        }
+    }
+
+
+
+
+    }
+    }
 
 /* 
  * You can define additional transpose functions below. We've defined
@@ -59,7 +111,7 @@ void registerFunctions()
     registerTransFunction(transpose_submit, transpose_submit_desc); 
 
     /* Register any additional transpose functions */
-    registerTransFunction(trans, trans_desc); 
+    //registerTransFunction(trans, trans_desc); 
 
 }
 

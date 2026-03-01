@@ -13,6 +13,8 @@
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 
 void transpose_32(int A[32][32],int B[32][32]);
+void transpose_61(int A[67][61],int B[61][67]);
+void transpose_64(int A[64][64], int B[64][64]);
 /* 
  * transpose_submit - This is the solution transpose function that you
  *     will be graded on for Part B of the assignment. Do not change
@@ -27,6 +29,7 @@ void transpose_submit (int M, int N, int A[N][M] , int B[M][N]){
 
 
 	if(N==32 && M==32)transpose_32( A,B);
+    if (M ==61 && N==67) transpose_61(A,B);
 
 
 
@@ -76,6 +79,36 @@ void transpose_32( int A[32][32], int B[32][32])
     }
     }
 
+
+void transpose_61( int A[67][61], int B[61][67])
+{
+
+    // given that the cache 
+    int i,j,i1,j1;
+
+    for (i = 0; i < 67; i += 16) {
+        for (j = 0; j < 61; j += 16) {
+            for (i1 = i; i1 < i + 16&& i1 <67; i1++) {
+                for ( j1 = j; j1 < j + 16 && j1<61; j1++) {
+
+			
+
+			B[j1][i1] = A[i1][j1];
+
+
+			
+
+			
+    }
+
+
+
+
+    }
+    }
+
+}
+}
 /* 
  * You can define additional transpose functions below. We've defined
  * a simple one below to help you get started. 
